@@ -1,0 +1,77 @@
+# -----------------------------
+# ConfigMap (Application Config)
+# -----------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myapp-config
+data:
+  APP_ENV: "production"
+  APP_MESSAGE: "Hello from Kubernetes!"
+---
+
+# -----------------------------
+# Deployment
+# -----------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels:
+    app: myapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: nginx:1.27
+        ports:
+        - containerPort: 80
+        envFrom:
+        - configMapRef:
+            name: myapp-config
+
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+
+# -----------------------------
+# Service (Expose Deployment)
+# -----------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  type: LoadBalancer # Creates AWS ELB/NLB in EKS
+  selector:
+    app: myapp
+  ports:
+  - port: 80
+    targetPort: 80
