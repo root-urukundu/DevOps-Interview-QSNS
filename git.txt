@@ -1,0 +1,67 @@
+MERGE:
+- Combines branches and creates a NEW merge commit.
+- Preserves full history as is.
+- History becomes non-linear (multiple branches).
+- Safe for shared branches like main/dev.
+
+REBASE:
+- Re-applies your commits on top of another branch.
+- Rewrites history: creates NEW commit IDs.
+- Linear history (clean).
+- Use only on local/feature branches, never on shared team branches.
+
+2) What is Cherry-pick?
+---------------------------------------------------
+- Cherry-pick applies a specific commit from one branch to another.
+- Used to move a FIX or HOTFIX without merging the whole branch.
+
+git cherry-pick <commit-id>
+
+RESET:
+- Moves branch pointer backward.
+- Can delete commits.
+- Dangerous on shared branches.
+Types:
+  soft  -> keep changes staged
+  mixed -> keep changes unstaged
+  hard  -> delete changes completely
+
+REVERT:
+- Creates a NEW commit that undoes an old commit.
+- Safe for production/main branch.
+
+Merge conflict happens when:
+- Two branches modify the same line
+- Or one deletes a file while another updates it
+
+Conflict markers:
+<<<<<<< HEAD
+your changes
+=======
+incoming changes
+>>>>>>> feature/login
+
+Steps to resolve:
+1. Open file, remove conflict markers
+2. Keep correct code
+3. git add <file>
+4. git commit (or git rebase --continue)
+
+Explain Branching Strategy in your project.
+---------------------------------------------------
+Say this (standard real-time workflow):
+
+main/master → production  
+develop     → integration / QA  
+feature/*   → individual dev branches  
+release/*   → pre-prod  
+hotfix/*    → urgent fixes to production  
+
+Flow:
+- Developers create feature branches from develop.
+- Create PR → merge to develop.
+- Release branch created → tested → merged to main.
+- Tags added on main for versioning.
+- Hotfix branches created from main, merged back to main + develop.
+
+

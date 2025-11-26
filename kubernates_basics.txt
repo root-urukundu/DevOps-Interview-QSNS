@@ -1,0 +1,89 @@
+KUBERNETES INTERVIEW ONE-PAGE CHEAT SHEET
+
+1. Core Objects
+- Pod, ReplicaSet, Deployment
+- Services: ClusterIP, NodePort, LoadBalancer
+- ConfigMap, Secret, Ingress
+
+2. Deployments
+- Rolling updates, rollback
+- Commands:
+  kubectl rollout status deployment/myapp
+  kubectl rollout history deployment/myapp
+  kubectl rollout undo deployment/myapp
+
+3. Scaling
+Horizontal Scaling:
+  kubectl scale deployment myapp --replicas=5
+  kubectl autoscale deployment myapp --cpu-percent=70 --min=2 --max=10
+
+Vertical Scaling:
+  resources:
+    requests: cpu/memory
+    limits: cpu/memory
+
+4. Services & Load Balancing (EKS)
+- ClusterIP: internal only
+- NodePort: exposes service on each node
+- LoadBalancer: creates AWS ELB/NLB
+- Ingress: HTTP routing (path/host-based)
+
+Traffic Flow:
+User -> Ingress (ALB) -> Service -> Pods
+
+5. Ingress (ALB/Nginx)
+- Requires Ingress Controller
+- Path-based and Host-based routing
+- SSL termination possible
+
+6. ConfigMaps & Secrets
+ConfigMap:
+  kubectl create configmap app-config --from-literal=ENV=prod
+
+Secret:
+  kubectl create secret generic db-secret --from-literal=pwd=admin123
+
+7. Troubleshooting
+kubectl describe pod <pod>
+kubectl logs <pod>
+kubectl logs -f <pod>
+kubectl rollout status deployment/myapp
+kubectl describe svc myapp-svc
+
+8. Storage
+- PV = actual volume
+- PVC = claim request
+- StorageClass = dynamic provisioning
+AWS:
+- EBS (single AZ)
+- EFS (multi AZ shared)
+
+9. Namespaces
+kubectl create ns dev
+kubectl get pods -n dev
+
+10. Networking
+- CNI plugin provides pod networking
+- Pods get unique IPs
+- kube-proxy manages service routing
+
+11. RBAC
+- Role, ClusterRole
+- RoleBinding, ClusterRoleBinding
+Used for access control (developers, CI/CD, etc.)
+
+12. Node Management
+kubectl drain node1 --ignore-daemonsets --force
+kubectl cordon node1
+kubectl uncordon node1
+
+13. Real-Time Architecture Summary
+- Deployments manage rolling updates & rollbacks
+- HPA scales pods
+- Cluster Autoscaler scales nodes
+- Ingress/ALB manages routing
+- Services load balance traffic
+- PV/PVC provide persistent storage
+
+Short summary:
+“Kubernetes gives declarative deployments, scaling, self-healing, service discovery, load balancing, and secure configuration for cloud applications.”

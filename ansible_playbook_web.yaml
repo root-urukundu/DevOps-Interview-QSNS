@@ -1,0 +1,32 @@
+---
+- name: Configure web server
+  hosts: webservers
+  become: yes
+
+  tasks:
+  - name: Install nginx
+    apt:
+      name: nginx
+      state: present
+      update_cache: yes
+
+  - name: Enable and start nginx
+    service:
+      name: nginx
+      state: started
+      enabled: yes
+
+# How to explain:
+
+# Top level play: runs on group webservers from inventory.
+
+# become: yes – use sudo for tasks.
+
+# First task: apt module installs nginx package.
+
+# Second task: service module makes sure nginx is running and enabled at boot.
+
+# Highlight idempotent: running the playbook again doesn’t break anything.
+
+# Command you can mention:
+# ansible-playbook -i hosts web.yml

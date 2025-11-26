@@ -1,0 +1,273 @@
+=============================
+LINUX REAL-TIME CHEATSHEET (5+ YRS DEVOPS)
+For 5+ yrs DevOps / Prod Support Interviews
+=============================
+
+# 1. BASIC NAVIGATION & FILE HANDLING
+pwd                           # show current directory (debug “where am I?”)
+ls                            # list files
+ls -lah                       # human-readable, show hidden, perms, owner, size
+cd /path/to/dir               # change dir
+cd -                          # go back to previous dir
+
+mkdir logs                    # create directory
+mkdir -p /opt/app/logs        # create nested dirs (real-time: app setup)
+
+touch file.txt                # create empty file or update timestamp
+cp file.txt /tmp/             # copy file
+cp -r dir1 dir2               # copy directory recursively
+mv oldname.txt newname.txt    # rename / move file
+rm file.txt                   # remove file
+rm -rf /tmp/testdir           # remove directory recursively (be very careful in prod)
+
+# View files (huge logs in prod)
+cat app.log                   # show full file (small files only)
+more app.log                  # paged view (older tool)
+less app.log                  # paged view, supports search (recommended)
+head -n 50 app.log            # first 50 lines (check config/log start)
+tail -n 50 app.log            # last 50 lines (recent logs)
+tail -f app.log               # follow logs in real-time (prod debugging)
+tail -F app.log               # follow even after log rotation
+
+# 2. PERMISSIONS & OWNERSHIP
+ls -l                         # show perms: rwxr-xr-x
+chmod 644 file.txt            # rw-r--r-- (common for config files)
+chmod 755 script.sh           # rwxr-xr-x (common for scripts)
+chmod +x script.sh            # add execute permission
+
+chown user:group file.txt     # change owner (real-time: app user ownership)
+chown -R appuser:appgrp /opt/app   # recursive change (deployments)
+
+umask                         # show default permission mask
+
+# 3. SEARCH, FILTER & TEXT PROCESSING
+# Common real-time: troubleshooting logs, searching configs
+
+grep "ERROR" app.log          # search for string
+grep -i "error" app.log       # case-insensitive
+grep -R "DB_HOST" /etc        # search recursively in directory
+grep -Rni "timeout" .         # recursive, line number, case-insensitive
+
+# Use pipes with grep
+journalctl -u nginx | grep -i error      # search errors in systemd logs
+
+# tail + grep for real-time log monitoring
+tail -f app.log | grep "OrderID"         # watch specific entries in live logs
+
+# awk & cut for columns
+awk '{print $1,$5}' file.txt             # print selected columns
+df -h | awk '{print $1,$5}'              # show filesystem & usage
+cut -d: -f1 /etc/passwd                  # list usernames
+
+# sed for in-place replacement
+sed -n '1,20p' file.txt                  # print lines 1-20
+sed -i 's/OLD_VALUE/NEW_VALUE/g' file.txt  # replace in file (take backup in prod)
+
+# find for files (real-time: finding configs/logs)
+find /var/log -name "*.log"              # find logs
+find . -type f -mtime -1                 # files modified in last 1 day
+find . -type f -size +100M               # files > 100MB (disk usage issues)
+find / -name "nginx.conf" 2>/dev/null    # find config, ignore permission errors
+
+# 4. PROCESSES & RESOURCE USAGE
+ps aux                         # all processes (quick general view)
+ps aux | grep nginx            # filter by name
+ps -ef | grep java             # another common style (java apps)
+
+top                            # interactive process viewer
+htop                           # better top (if installed)
+
+free -m                        # memory usage in MB
+vmstat 1 5                     # CPU, memory, IO (sampling)
+iostat 1 5                     # disk IO (needs sysstat)
+uptime                         # load average (system load)
+dmesg | tail                   # kernel messages (disk, memory, OOM issues)
+
+kill <PID>                     # terminate process
+kill -9 <PID>                  # force kill (use carefully)
+pkill nginx                    # kill by name
+systemctl restart nginx        # preferred instead of killing manually
+
+# 5. SYSTEMD SERVICES & LOGS
+systemctl status nginx         # check service status (real-time debugging)
+systemctl start nginx          # start service
+systemctl stop nginx           # stop service
+systemctl restart nginx        # restart service
+systemctl reload nginx         # reload config without full restart
+systemctl enable nginx         # start at boot
+systemctl disable nginx        # stop starting at boot
+systemctl list-units --type=service  # list systemd services
+
+# Central logs via journalctl
+journalctl -u nginx            # logs for nginx service
+journalctl -u nginx -f         # follow logs
+journalctl -u nginx --since "10 min ago"
+journalctl -xe                 # show recent errors
+
+# 6. NETWORKING & CONNECTIVITY
+ip a                           # show IP addresses (replacement for ifconfig)
+ip r                           # show routing table
+ip link                        # show interfaces
+
+ping google.com                # test connectivity
+curl -I http://localhost       # check HTTP response headers
+curl -vk https://example.com   # verbose TLS debug
+wget http://example.com/file   # download files
+
+netstat -tulpn                 # (older) list listening ports + processes
+ss -tulpn                      # modern replacement for netstat
+
+telnet host port               # test TCP connectivity to specific port
+nc -vz host port               # test TCP port with netcat
+
+dig example.com                # DNS resolution
+nslookup example.com           # DNS (older tool)
+
+# 7. DISK, FILESYSTEM & LVM (COMMON PROD ISSUE: "DISK FULL")
+df -h                          # disk usage, human-readable
+df -i                          # inode usage
+du -sh *                       # size of items in current dir
+du -sh /var/log/*              # find heavy logs
+
+mount                          # show mounted filesystems
+lsblk                          # list block devices (disks/partitions)
+blkid                          # show UUIDs and filesystem types
+
+# LVM basics (if using LVM)
+pvs                            # physical volumes
+vgs                            # volume groups
+lvs                            # logical volumes
+
+# 8. USERS, GROUPS & SUDO
+whoami                         # current user
+id                             # user + groups
+who                            # logged-in users
+last                           # login history
+
+cat /etc/passwd                # user list
+cat /etc/group                 # group list
+
+useradd deployuser             # add user (admin task)
+passwd deployuser              # set password
+usermod -aG wheel deployuser   # add to sudo group (on RHEL-like)
+usermod -aG sudo deployuser    # add to sudo group (on Debian-like)
+
+sudo -i                        # become root
+sudo -u appuser command        # run command as appuser
+
+# 9. PACKAGE MANAGEMENT (RHEL/CentOS & Ubuntu/Debian)
+# RHEL / CentOS / Amazon Linux (YUM / DNF)
+yum install nginx              # install package
+yum remove nginx               # remove package
+yum update                     # update all
+yum search nginx               # search package
+rpm -qa | grep nginx           # list installed package details
+
+# Ubuntu / Debian (APT)
+apt update                     # refresh package index
+apt install nginx              # install package
+apt remove nginx               # remove package
+apt list --installed | grep nginx   # list installed package
+
+# 10. ARCHIVING & COMPRESSION
+tar -cvf logs.tar logs/        # create tar archive
+tar -xvf logs.tar              # extract tar
+tar -czvf logs.tar.gz logs/    # create compressed tar.gz
+tar -xzvf logs.tar.gz          # extract tar.gz
+
+gzip huge.log                  # compress file
+gunzip huge.log.gz             # decompress
+
+zip -r logs.zip logs/          # zip directory
+unzip logs.zip                 # unzip
+
+# 11. SCHEDULING & CRON
+crontab -l                     # list current user crons
+crontab -e                     # edit crontab
+
+# Example: run backup script every day at 2:30 AM
+30 2 * * * /opt/scripts/backup.sh >> /var/log/backup.log 2>&1
+
+systemctl status crond         # check cron service status (RHEL)
+
+at now + 10 minutes            # schedule one-time command (type Ctrl+D to save)
+
+# 12. SYSTEM INFO & OS DETAILS
+hostname                       # get hostname
+hostnamectl                    # detailed host info (OS, kernel, etc.)
+cat /etc/os-release            # OS version info
+uname -r                       # kernel version
+uname -a                       # kernel + architecture
+
+lscpu                          # CPU details
+lsmem                          # memory details (some distros)
+lshw                           # hardware details (if installed)
+
+# 13. SECURITY, FIREWALL & SELINUX (RHEL)
+# Firewall (firewalld)
+systemctl status firewalld
+firewall-cmd --list-all        # current rules
+firewall-cmd --add-port=80/tcp --permanent
+firewall-cmd --reload
+
+# SELinux
+getenforce                     # Enforcing / Permissive / Disabled
+setenforce 0                   # set permissive (temporary; prod caution)
+semanage port -l | grep http   # list ports (if policycoreutils-python installed)
+
+# 14. FILE INTEGRITY, CHECKSUMS & DIFF
+md5sum file.iso                # md5 checksum
+sha256sum file.iso             # sha256 checksum
+
+diff old.conf new.conf         # show differences between files
+diff -u old.conf new.conf      # unified diff (patch-style)
+
+# 15. REAL-TIME TROUBLESHOOTING EXAMPLES (SUMMARY)
+# 1) App not starting
+systemctl status app.service
+journalctl -u app.service -xe
+tail -n 100 /var/log/app/app.log
+
+# 2) Port not reachable
+ss -tulpn | grep 8080          # is app listening?
+firewall-cmd --list-all        # firewall blocking?
+telnet appserver 8080          # from client box
+curl -v http://appserver:8080  # HTTP connectivity
+
+# 3) Disk full
+df -h
+du -sh /var/* | sort -h        # find biggest dirs
+du -sh /var/log/* | sort -h    # heavy logs
+rm old logs (or rotate) carefully
+
+# 4) High CPU
+top or htop                    # which process?
+ps -p <PID> -o %cpu,%mem,cmd   # more details
+strace -p <PID>                # system calls (advanced debugging)
+
+# 5) Permission denied after deployment
+ls -ld /opt/app /opt/app/logs
+ls -l /opt/app
+chown -R appuser:appgrp /opt/app
+chmod -R 750 /opt/app
+
+# 16. USEFUL ONE-LINERS (FOR INTERVIEW TALK)
+# Count lines containing ERROR in log
+grep -c "ERROR" app.log
+
+# Show 10 most common IPs hitting a server
+awk '{print $1}' access.log | sort | uniq -c | sort -nr | head
+
+# Compress yesterday’s logs
+find /var/log/app -name "*.log" -mtime 1 -exec gzip {} \;
+
+# Find and delete files older than 30 days (log cleanup)
+find /var/log/app -type f -mtime +30 -delete
+
+# Replace value in config (back up first in prod!)
+cp app.conf app.conf.bak
+sed -i 's/oldvalue/newvalue/g' app.conf
+
+=============================
+END OF CHEATSHEET
+=============================
